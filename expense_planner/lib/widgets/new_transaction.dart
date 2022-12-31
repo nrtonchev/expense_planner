@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class NewTransaction extends StatefulWidget {
   final Function _addTransaction;
@@ -9,21 +10,42 @@ class NewTransaction extends StatefulWidget {
 }
 
 class _NewTransactionState extends State<NewTransaction> {
-  final titleControler = TextEditingController();
+  final _titleControler = TextEditingController();
+  final _amountControler = TextEditingController();
+  DateTime _selectedDate;
 
-  final amountControler = TextEditingController();
-
-  void submitData() {
-    final enteredTitle = titleControler.text;
-    final enteredAmount = double.parse(amountControler.text);
-
-    if (enteredTitle.isEmpty || enteredAmount <= 0) {
+  void _submitData() {
+    if (_amountControler.text.isEmpty) {
       return;
     }
 
-    widget._addTransaction(enteredTitle, enteredAmount);
+    final enteredTitle = _titleControler.text;
+    final enteredAmount = double.parse(_amountControler.text);
+
+    if (enteredTitle.isEmpty || enteredAmount <= 0 || _selectedDate == null) {
+      return;
+    }
+
+    widget._addTransaction(enteredTitle, enteredAmount, _selectedDate);
 
     Navigator.of(context).pop();
+  }
+
+  void _presentDatePicker() {
+    showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(2019),
+            lastDate: DateTime.now())
+        .then((value) {
+      if (value == null) {
+        return;
+      }
+
+      setState(() {
+        _selectedDate = value;
+      });
+    });
   }
 
   @override
@@ -38,22 +60,39 @@ class _NewTransactionState extends State<NewTransaction> {
             TextField(
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: 'Title'),
-              controller: titleControler,
-              onSubmitted: (val) => submitData(),
+              controller: _titleControler,
+              onSubmitted: (val) => _submitData(),
             ),
             TextField(
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: 'Amount'),
-              controller: amountControler,
+              controller: _amountControler,
               keyboardType: TextInputType.number,
-              onSubmitted: (val) => submitData(),
+              onSubmitted: (val) => _submitData(),
             ),
-            TextButton(
-              onPressed: submitData,
-              child: Text('Add Transaction'),
-              style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.blue),
-                  foregroundColor: MaterialStateProperty.all(Colors.white)),
+            Container(
+              height: 70,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(_selectedDate == null
+                        ? 'No Date Selected!'
+                        : 'Picked Date: ${DateFormat.yMMMd().format(_selectedDate)}'),
+                  ),
+                  TextButton(
+                      onPressed: _presentDatePicker,
+                      child: Text(
+                        'Select Date',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ))
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _submitData,
+              child: Text(
+                'Add Transaction',
+              ),
             )
           ],
         ),
